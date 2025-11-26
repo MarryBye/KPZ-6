@@ -13,11 +13,11 @@ export const validatorEdit = async (req: Request, res: Response, next: NextFunct
     errors.push({ field: 'id', message: 'Id is required.' });
   }
 
-  if (username !== undefined && typeof username !== 'string') {
+  if (!username) {
     errors.push({ field: 'username', message: 'Username must be a string.' });
   }
 
-  if (name !== undefined && typeof name !== 'string') {
+  if (!name) {
     errors.push({ field: 'name', message: 'Name must be a string.' });
   }
 

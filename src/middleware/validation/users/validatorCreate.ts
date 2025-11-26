@@ -6,12 +6,20 @@ import { CustomError } from 'utils/response/custom-error/CustomError';
 import { ErrorValidation } from 'utils/response/custom-error/types';
 
 export const validatorCreate = async (req: Request, res: Response, next: NextFunction) => {
-  const { email, password } = req.body;
+  const { username, name, email, password } = req.body;
 
   const errors: ErrorValidation[] = [];
 
   if (!email) {
     errors.push({ field: 'email', message: 'Email is required.' });
+  }
+
+  if (!name) {
+    errors.push({ field: 'name', message: 'Name is required.' });
+  }
+
+  if (!username) {
+    errors.push({ field: 'username', message: 'Username is required.' });
   }
 
   if (!password) {

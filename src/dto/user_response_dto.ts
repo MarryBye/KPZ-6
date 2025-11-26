@@ -15,6 +15,8 @@ export class UserResponseDTO {
     this.id = user.id;
     this.email = user.email;
     this.name = user.name ?? null;
+    this.role = user.role ?? null;
+    this.username = user.username ?? null;
     this.language = (user.language as any) ?? undefined;
     if (user.car !== null && user.car !== undefined) {
       this.car = { id: user.car.id, mark: user.car.mark, model: user.car.model };
