@@ -3,22 +3,12 @@ import { Request, Response, NextFunction } from 'express';
 import { CustomError } from 'utils/response/custom-error/CustomError';
 import { ErrorValidation } from 'utils/response/custom-error/types';
 
-export const validatorEdit = async (req: Request, res: Response, next: NextFunction) => {
-  const { username, name } = req.body;
+export const validatorDestroy = async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
-
   const errors: ErrorValidation[] = [];
 
   if (!id) {
     errors.push({ field: 'id', message: 'Id is required.' });
-  }
-
-  if (username !== undefined && typeof username !== 'string') {
-    errors.push({ field: 'username', message: 'Username must be a string.' });
-  }
-
-  if (name !== undefined && typeof name !== 'string') {
-    errors.push({ field: 'name', message: 'Name must be a string.' });
   }
 
   if (errors.length > 0) {

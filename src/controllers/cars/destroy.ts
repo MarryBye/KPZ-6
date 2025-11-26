@@ -1,30 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
-import { getRepository } from 'typeorm';
 
-import { Car } from 'orm/entities/cars/Car';
-import { CustomError } from 'utils/response/custom-error/CustomError';
+import { CarService } from 'service/CarService';
+import { CarResponseDTO } from '../../dto/car_response_dto';
 
 export const destroy = async (req: Request, res: Response, next: NextFunction) => {
   const id = req.params.id;
+  const carService = new CarService();
 
-  const carRepository = getRepository(Car);
-  try {
-    const car = await carRepository.findOne({ where: { id } });
+  const [car, error] = await carService.destroy(id);
 
-    if (!car) {
-      const customError = new CustomError(404, 'General', 'Not Found', [`Car with id:${id} doesn't exist.`]);
-      return next(customError);
-    }
-
-    await carRepository.delete(id);
-
-    res.customSuccess(200, 'Car successfully deleted.', {
-      id: car.id,
-      mark: car.mark,
-      model: car.model,
-    });
-  } catch (err) {
-    const customError = new CustomError(400, 'Raw', 'Error', null, err);
-    return next(customError);
+  if (error) {
+    return next(error);
   }
+
+  const carDTO = new CarResponseDTO(car!);
+
+  res.customSuccess(200, 'Car successfully deleted.', carDTO);
 };

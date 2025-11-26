@@ -1,11 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
 import { getRepository } from 'typeorm';
 
-import { User } from '../orm/entities/users/User';
 import { Role, Language } from '../orm/entities/users/types';
+import { User } from '../orm/entities/users/User';
 import { CustomError } from '../utils/response/custom-error/CustomError';
 
-class ProductService {
+class UserService {
   private userRepository = getRepository(User);
 
   async create(
@@ -15,15 +14,14 @@ class ProductService {
     name: string,
     role: Role,
     language: Language,
-  ): Promise<[User, CustomError]> {
-    let result: User = null;
-    let message: CustomError = null;
+  ): Promise<[User | null, CustomError | null]> {
+    let result: User | null = null;
 
     try {
-      const user_exists = await userRepository.findOne({ where: { email } });
+      const user_exists = await this.userRepository.findOne({ where: { email } });
 
       if (user_exists) {
-        message = new CustomError(400, 'General', 'Exists', [`User exists.`]);
+        return [null, new CustomError(400, 'General', 'Exists', [`User exists.`])];
       }
 
       const user = new User();
@@ -39,30 +37,77 @@ class ProductService {
       await this.userRepository.save(user);
 
       result = user;
-
-
     } catch (err) {
-      message = new CustomError(400, 'Raw', 'Error', null, err);
+      return [null, new CustomError(500, 'Raw', 'Error', null, err)];
     }
 
-    return [result, message];
+    return [result, null];
   }
 
-  async findOne(id: string): Promise<User> {
-    return user;
+  async list(): Promise<[User[] | null, CustomError | null]> {
+    try {
+      const users = await this.userRepository.find({
+        relations: ['car', 'orders_as_driver', 'orders_as_client'],
+      });
+      return [users, null];
+    } catch (err) {
+      return [null, new CustomError(400, 'Raw', `Can't retrieve list of users.`, null, err)];
+    }
   }
 
-  async findAll(): Promise<Promise<User>[]> {
-    return user;
+  async show(id: number | string): Promise<[User | null, CustomError | null]> {
+    try {
+      const user = await this.userRepository.findOne(id, {
+        relations: ['car', 'orders_as_driver', 'orders_as_client'],
+      });
+
+      if (!user) {
+        return [null, new CustomError(404, 'General', `User with id:${id} not found.`, ['User not found.'])];
+      }
+
+      return [user, null];
+    } catch (err) {
+      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+    }
   }
 
-  async update(): Promise<User> {
-    return user;
+  async edit(id: number | string, username?: string, name?: string): Promise<[User | null, CustomError | null]> {
+    try {
+      const user = await this.userRepository.findOne({ where: { id } });
+
+      if (!user) {
+        return [null, new CustomError(404, 'General', `User with id:${id} not found.`, ['User not found.'])];
+      }
+
+      user.username = username;
+      user.name = name;
+
+      try {
+        await this.userRepository.save(user);
+        return [user, null];
+      } catch (err) {
+        return [null, new CustomError(409, 'Raw', `User '${user.email}' can't be saved.`, null, err)];
+      }
+    } catch (err) {
+      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+    }
   }
 
-  async delete(): Promise<User> {
-    return user;
+  async destroy(id: number | string): Promise<[User | null, CustomError | null]> {
+    try {
+      const user = await this.userRepository.findOne({ where: { id } });
+
+      if (!user) {
+        return [null, new CustomError(404, 'General', 'Not Found', [`User with id:${id} doesn't exists.`])];
+      }
+
+      await this.userRepository.delete(id);
+
+      return [user, null];
+    } catch (err) {
+      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+    }
   }
 }
 
-export { ProductService };
+export { UserService };

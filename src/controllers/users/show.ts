@@ -1,38 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
-import { getRepository } from 'typeorm';
 
-import { User } from 'orm/entities/users/User';
-import { CustomError } from 'utils/response/custom-error/CustomError';
+import { UserService } from 'service/UserService';
+import { UserResponseDTO } from '../../dto/user_response_dto';
 
 export const show = async (req: Request, res: Response, next: NextFunction) => {
   const id = req.params.id;
+  const userService = new UserService();
 
-  const userRepository = getRepository(User);
-  try {
-    const user = await userRepository.findOne(id, {
-      relations: ['car', 'orders_as_driver', 'orders_as_client'],
-      select: [
-        'id',
-        'username',
-        'name',
-        'email',
-        'role',
-        'language',
-        'created_at',
-        'updated_at',
-        'orders_as_client',
-        'orders_as_driver',
-        'car',
-      ],
-    });
+  const [user, error] = await userService.show(id);
 
-    if (!user) {
-      const customError = new CustomError(404, 'General', `User with id:${id} not found.`, ['User not found.']);
-      return next(customError);
-    }
-    res.customSuccess(200, 'User found', user);
-  } catch (err) {
-    const customError = new CustomError(400, 'Raw', 'Error', null, err);
-    return next(customError);
+  if (error) {
+    return next(error);
   }
+
+  const userDTO = new UserResponseDTO(user);
+
+  res.customSuccess(200, 'User found', userDTO);
 };

@@ -60,7 +60,6 @@ export class User {
   updated_at: Date;
 
   @OneToOne(() => Car, (car) => car.driver, { nullable: true, onDelete: 'CASCADE' })
-  @JoinColumn()
   car: Car;
 
   @OneToMany(() => RideOrder, (order) => order.driver, { onDelete: 'CASCADE' })

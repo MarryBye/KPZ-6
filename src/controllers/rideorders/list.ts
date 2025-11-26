@@ -1,21 +1,18 @@
 import { Request, Response, NextFunction } from 'express';
-import { getRepository } from 'typeorm';
 
-import { RideOrder } from 'orm/entities/ride_orders/RideOrder';
-import { User } from 'orm/entities/users/User';
-import { CustomError } from 'utils/response/custom-error/CustomError';
+import { RideOrderService } from 'service/RideOrderService';
+import { RideOrderResponseDTO } from '../../dto/rideorder_response_dto';
 
 export const list = async (req: Request, res: Response, next: NextFunction) => {
-  const rideOrderRepository = getRepository(RideOrder);
-  try {
-    const orders = await rideOrderRepository.find({
-      relations: ['driver', 'client'],
-      select: ['id', 'order_status', 'payment_type', 'start_date', 'end_date', 'driver', 'client'],
-    });
+  const rideOrderService = new RideOrderService();
 
-    res.customSuccess(200, 'List of ride orders.', orders);
-  } catch (err) {
-    const customError = new CustomError(400, 'Raw', `Can't retrieve ride orders.`, null, err);
-    return next(customError);
+  const [orders, error] = await rideOrderService.list();
+
+  if (error) {
+    return next(error);
   }
+
+  const orderDTOs = orders.map(order => new RideOrderResponseDTO(order));
+
+  res.customSuccess(200, 'List of ride orders.', orderDTOs);
 };
