@@ -11,11 +11,11 @@ export class CarResponseDTO {
   driver: UserResponseDTO | null;
 
   constructor(car: Car) {
-    this.id = car.id
-    this.mark = car.mark
-    this.model = car.model
-    if (car.driver !== null && car.driver !== undefined) {
-      this.driver = new UserResponseDTO(car.driver);
-    }
+    this.id = car.id;
+    this.mark = car.mark;
+    this.model = car.model;
+    this.car_class = car.car_class ?? undefined;
+    this.car_status = car.car_status ?? undefined;
+    this.driver = car.driver ? new UserResponseDTO(car.driver) : null;
   }
-}
+};

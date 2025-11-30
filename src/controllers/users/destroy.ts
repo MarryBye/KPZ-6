@@ -1,3 +1,4 @@
+// filepath: [destroy.ts](http://_vscodecontentref_/1)
 import { Request, Response, NextFunction } from 'express';
 
 import { UserService } from 'service/UserService';
@@ -7,7 +8,7 @@ export const destroy = async (req: Request, res: Response, next: NextFunction) =
   const id = req.params.id;
   const userService = new UserService();
 
-  const [result, error] = await userService.destroy(id);
+  const { result, error } = await userService.destroy(id);
 
   if (error) {
     return next(error);

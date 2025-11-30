@@ -9,13 +9,13 @@ export const edit = async (req: Request, res: Response, next: NextFunction) => {
 
   const rideOrderService = new RideOrderService();
 
-  const [order, error] = await rideOrderService.edit(id, order_status, payment_type, start_date, end_date, driverId, clientId);
+  const { result, error } = await rideOrderService.edit(id, order_status, payment_type, clientId, driverId, start_date, end_date );
 
   if (error) {
     return next(error);
   }
 
-  const orderDTO = new RideOrderResponseDTO(order);
+  const orderDTO = new RideOrderResponseDTO(result);
 
   res.customSuccess(200, 'Ride order successfully saved.', orderDTO);
 };

@@ -51,21 +51,19 @@ export class User {
   })
   language: string;
 
-  @Column()
   @CreateDateColumn()
   created_at: Date;
 
-  @Column()
   @UpdateDateColumn()
   updated_at: Date;
 
-  @OneToOne(() => Car, (car) => car.driver, { nullable: true, onDelete: 'CASCADE' })
+  @OneToOne(() => Car, (car) => car.driver)
   car: Car;
 
-  @OneToMany(() => RideOrder, (order) => order.driver, { onDelete: 'CASCADE' })
+  @OneToMany(() => RideOrder, (order) => order.driver)
   orders_as_driver: RideOrder[];
 
-  @OneToMany(() => RideOrder, (order) => order.client, { onDelete: 'CASCADE' })
+  @OneToMany(() => RideOrder, (order) => order.client)
   orders_as_client: RideOrder[];
 
   setLanguage(language: Language) {

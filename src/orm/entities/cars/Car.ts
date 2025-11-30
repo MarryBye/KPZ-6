@@ -39,7 +39,7 @@ export class Car {
   })
   car_class: Car_class;
 
-  @OneToOne(() => User, (user) => user.car, { nullable: true })
+  @OneToOne(() => User, (user) => user.car, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn()
   driver: User;
 }

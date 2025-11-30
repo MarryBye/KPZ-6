@@ -1,31 +1,40 @@
 import { Request, Response, NextFunction } from 'express';
 
 import { CustomError } from 'utils/response/custom-error/CustomError';
-import { ErrorValidation } from 'utils/response/custom-error/types';
 
 export const validatorEdit = async (req: Request, res: Response, next: NextFunction) => {
-  const { mark, model, car_class, car_status, driver_id } = req.body;
-  const { id } = req.params;
-  const errors: ErrorValidation[] = [];
+  const id = req.params.id;
+  const { mark, model, car_class, car_status, driverId } = req.body;
+  const errors: string[] = [];
 
   if (!id) {
-    errors.push({ field: 'id', message: 'Id is required.' });
+    errors.push("No id parameter provided.");
   }
 
   if (mark !== undefined && typeof mark !== 'string') {
-    errors.push({ field: 'mark', message: 'Mark must be a string.' });
+    errors.push("Mark must be a string.");
   }
 
   if (model !== undefined && typeof model !== 'string') {
-    errors.push({ field: 'model', message: 'Model must be a string.' });
+    errors.push("Model must be a string.");
   }
 
-  if (driver_id !== undefined && typeof driver_id !== 'number' && typeof driver_id !== 'string') {
-    errors.push({ field: 'driver_id', message: 'driver_id must be a number or string.' });
+  if (car_class !== undefined && typeof car_class !== 'string') {
+    errors.push("car_class must be a string.");
   }
+
+  if (car_status !== undefined && typeof car_status !== 'string') {
+    errors.push("car_status must be a string.");
+  }
+
+  if (driverId !== undefined && driverId !== null && typeof driverId !== 'number' && typeof driverId !== 'string') {
+    errors.push("driverId must be a number or string.");
+  }
+
+  const error_string = errors.join('\n');
 
   if (errors.length > 0) {
-    return next(new CustomError(400, 'Validation', 'Validation errors occurred.'));
+    return next(new CustomError(400, 'Validation', error_string));
   }
 
   return next();

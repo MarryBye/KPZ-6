@@ -2,110 +2,161 @@ import { getRepository } from 'typeorm';
 
 import { Role, Language } from '../orm/entities/users/types';
 import { User } from '../orm/entities/users/User';
-import { CustomError } from '../utils/response/custom-error/CustomError';
+import { CustomError } from 'utils/response/custom-error/CustomError';
 
 class UserService {
   private userRepository = getRepository(User);
 
+  private makeCustomError(errors: string[]) {
+    return new CustomError(404, "Raw", errors.join("\n"));
+  }
+
+  async list(): Promise<{ result: User[] | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors: string[] = [];
+
+    const users = await this.userRepository.find({
+      relations: ['car', 'orders_as_driver', 'orders_as_client'],
+    });
+
+    if (!users || users.length === 0) {
+      errors.push("No users found.");
+    }
+
+    if (errors.length === 0) {
+      data.result = users;
+    } else {
+      data.error = this.makeCustomError(errors);
+    }
+
+    return data;
+  }
+
+  async show(id: number | string): Promise<{ result: User | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors: string[] = [];
+
+    const user = await this.userRepository.findOne(id, {
+      relations: ['car', 'orders_as_driver', 'orders_as_client'],
+    });
+
+    if (!user) {
+      errors.push("User not found.");
+    }
+
+    if (errors.length === 0) {
+      data.result = user;
+    } else {
+      data.error = this.makeCustomError(errors);
+    }
+
+    return data;
+  }
+
   async create(
     email: string,
     password: string,
-    username: string,
-    name: string,
-    role: Role,
-    language: Language,
-  ): Promise<[User | null, CustomError | null]> {
-    let result: User | null = null;
+    username?: string,
+    name?: string,
+    role?: Role,
+    language?: Language,
+  ): Promise<{ result: User | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors: string[] = [];
 
     try {
-      const user_exists = await this.userRepository.findOne({ where: { email } });
-
-      if (user_exists) {
-        return [null, new CustomError(400, 'General', 'Exists', [`User exists.`])];
+      const userExists = await this.userRepository.findOne({ where: { email } });
+      if (userExists) {
+        errors.push(`User with email ${email} already exists.`);
       }
 
-      const user = new User();
-      user.email = email;
-      user.password = password;
-      user.username = username || null;
-      user.name = name || null;
-      user.role = role || 'STANDARD';
-      user.language = language || 'en-US';
+      if (errors.length === 0) {
+        const user = this.userRepository.create();
+        user.email = email;
+        user.password = password;
+        user.username = username ?? null;
+        user.name = name ?? null;
+        user.role = role ?? 'STANDARD';
+        user.language = language ?? 'en-US';
 
-      user.hashPassword();
+        if (errors.length === 0) {
+          await this.userRepository.save(user);
+          data.result = user;
+        } else {
+          data.error = this.makeCustomError(errors);
+        }
+      } else {
+        data.error = this.makeCustomError(errors);
+      }
 
-      await this.userRepository.save(user);
-
-      result = user;
-    } catch (err) {
-      return [null, new CustomError(500, 'Raw', 'Error', null, err)];
-    }
-
-    return [result, null];
-  }
-
-  async list(): Promise<[User[] | null, CustomError | null]> {
-    try {
-      const users = await this.userRepository.find({
-        relations: ['car', 'orders_as_driver', 'orders_as_client'],
-      });
-      return [users, null];
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', `Can't retrieve list of users.`, null, err)];
+      return data;
+    } catch (error) {
+      errors.push((error as any).message);
+      data.error = this.makeCustomError(errors);
+      return data;
     }
   }
 
-  async show(id: number | string): Promise<[User | null, CustomError | null]> {
+  async edit(id: number | string, username?: string, name?: string): Promise<{ result: User | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors: string[] = [];
+
     try {
-      const user = await this.userRepository.findOne(id, {
-        relations: ['car', 'orders_as_driver', 'orders_as_client'],
-      });
+      const user = await this.userRepository.findOne(id);
 
       if (!user) {
-        return [null, new CustomError(404, 'General', `User with id:${id} not found.`, ['User not found.'])];
+        errors.push("User not found.");
+        data.error = this.makeCustomError(errors);
+        return data;
       }
 
-      return [user, null];
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
-    }
-  }
-
-  async edit(id: number | string, username?: string, name?: string): Promise<[User | null, CustomError | null]> {
-    try {
-      const user = await this.userRepository.findOne({ where: { id } });
-
-      if (!user) {
-        return [null, new CustomError(404, 'General', `User with id:${id} not found.`, ['User not found.'])];
+      if (username !== undefined) {
+        user.username = username;
       }
 
-      user.username = username;
-      user.name = name;
+      if (name !== undefined) {
+        user.name = name;
+      }
 
-      try {
+      if (errors.length === 0) {
         await this.userRepository.save(user);
-        return [user, null];
-      } catch (err) {
-        return [null, new CustomError(409, 'Raw', `User '${user.email}' can't be saved.`, null, err)];
+        data.result = user;
+      } else {
+        data.error = this.makeCustomError(errors);
       }
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+
+      return data;
+    } catch (error) {
+      errors.push((error as any).message);
+      data.error = this.makeCustomError(errors);
+      return data;
     }
   }
 
-  async destroy(id: number | string): Promise<[User | null, CustomError | null]> {
-    try {
-      const user = await this.userRepository.findOne({ where: { id } });
+  async destroy(id: number | string): Promise<{ result: User | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors: string[] = [];
 
-      if (!user) {
-        return [null, new CustomError(404, 'General', 'Not Found', [`User with id:${id} doesn't exists.`])];
+    try {
+      const { result, error } = await this.show(id);
+
+      if (error) {
+        data.error = error;
+        return data;
       }
 
-      await this.userRepository.delete(id);
+      if (errors.length === 0) {
+        data.result = result;
+        await this.userRepository.delete(id);
+      } else {
+        data.error = this.makeCustomError(errors);
+      }
 
-      return [user, null];
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+      return data;
+    } catch (error) {
+      errors.push((error as any).message);
+      data.error = this.makeCustomError(errors);
+      return data;
     }
   }
 }

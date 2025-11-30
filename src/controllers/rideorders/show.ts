@@ -7,13 +7,13 @@ export const show = async (req: Request, res: Response, next: NextFunction) => {
   const id = req.params.id;
   const rideOrderService = new RideOrderService();
 
-  const [order, error] = await rideOrderService.show(id);
+  const { result, error } = await rideOrderService.show(id);
 
   if (error) {
     return next(error);
   }
 
-  const orderDTO = new RideOrderResponseDTO(order);
+  const orderDTO = new RideOrderResponseDTO(result);
 
   res.customSuccess(200, 'Ride order found.', orderDTO);
 };

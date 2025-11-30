@@ -4,15 +4,17 @@ import { CustomError } from 'utils/response/custom-error/CustomError';
 import { ErrorValidation } from 'utils/response/custom-error/types';
 
 export const validatorShow = async (req: Request, res: Response, next: NextFunction) => {
-  const { id } = req.params;
-  const errors: ErrorValidation[] = [];
+  const id = req.params.id;
+  const errors = [];
 
   if (!id) {
-    errors.push({ field: 'id', message: 'Id is required.' });
+    errors.push("No id parameter provided.");
   }
 
+  const error_string = errors.join('\n');
+
   if (errors.length > 0) {
-    return next(new CustomError(400, 'Validation', 'Validation errors occurred.'));
+    return next(new CustomError(400, 'Validation', error_string));
   }
 
   return next();

@@ -8,11 +8,10 @@ export class RideOrderResponseDTO {
   id: number;
   order_status: Order_status;
   payment_type: Payment_type;
-  start_date: Date;
+  client: UserResponseDTO;
+  start_date: Date | null;
   end_date: Date | null;
   driver: UserResponseDTO | null;
-  client: UserResponseDTO | null;
-
 
   constructor(rideOrder: RideOrder) {
     this.id = rideOrder.id;

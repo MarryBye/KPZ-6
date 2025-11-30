@@ -1,72 +1,98 @@
 import { getRepository } from 'typeorm';
 
 import { Car } from '../orm/entities/cars/Car';
-import { Car_class, Car_status } from '../orm/entities/cars/types';
 import { User } from '../orm/entities/users/User';
-import { CustomError } from '../utils/response/custom-error/CustomError';
+import { Car_class, Car_status } from '../orm/entities/cars/types';
+import { CustomError } from 'utils/response/custom-error/CustomError';
 
 class CarService {
   private carRepository = getRepository(Car);
   private userRepository = getRepository(User);
+
+  private makeCustomError(errors: string[]) {
+    return new CustomError(404, "Raw", errors.join("\n"));
+  }
+
+  async list(): Promise<{ result: Car[] | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors = [];
+
+    const cars = await this.carRepository.find({
+      relations: ['driver'],
+    });
+
+    if (cars.length === 0) {
+      errors.push("No cars found.");
+    }
+
+    if (errors.length === 0) {
+      data.result = cars;
+    } else {
+      data.error = this.makeCustomError(errors);
+    }
+
+    return data;
+  }
+
+  async show(id: number | string): Promise<{ result: Car | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors = [];
+
+    const car = await this.carRepository.findOne(id, {
+      relations: ['driver'],
+    });
+
+    if (!car) {
+      errors.push("Car not found.");
+    }
+
+    if (errors.length === 0) {
+      data.result = car;
+    } else {
+      data.error = this.makeCustomError(errors);
+    }
+
+    return data;
+  }
 
   async create(
     mark: string,
     model: string,
     car_class: Car_class,
     car_status: Car_status,
-    driver_id?: number | null,
-  ): Promise<[Car | null, CustomError | null]> {
+    driverId?: number | string,
+  ): Promise<{ result: Car | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors = [];
     try {
-      const car = new Car();
+      const car = this.carRepository.create();
       car.mark = mark;
       car.model = model;
-      car.car_class = (car_class as any) || 'STANDARD';
-      car.car_status = (car_status as any) || 'AVAILABLE';
+      car.car_class = car_class;
+      car.car_status = car_status;
 
-      if (driver_id !== undefined) {
-        const driver = await this.userRepository.findOne({ where: { id: driver_id } });
-        if (!driver) {
-          return [
-            null,
-            new CustomError(404, 'General', `Driver with id:${driver_id} not found.`, ['Driver not found.']),
-          ];
-        }
+    if (driverId !== undefined) {
+      const driver = await this.userRepository.findOne(driverId);
+      if (!driver) {
+        errors.push(`Driver with id ${driverId} not found.`);
+      } else {
         car.driver = driver;
       }
+    }
 
+    if (errors.length === 0) {
+      data.result = car;
       await this.carRepository.save(car);
-      return [car, null];
-    } catch (err) {
-      return [null, new CustomError(500, 'Raw', 'Error', null, err)];
+    } else {
+      data.error = this.makeCustomError(errors);
     }
-  }
 
-  async list(): Promise<[Car[] | null, CustomError | null]> {
-    try {
-      const cars = await this.carRepository.find({
-        relations: ['driver'],
-        select: ['id', 'model', 'mark', 'car_class', 'car_status', 'driver'],
-      });
-      return [cars, null];
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', `Can't retrieve list of cars.`, null, err)];
-    }
-  }
+    return data;
 
-  async show(id: number | string): Promise<[Car | null, CustomError | null]> {
-    try {
-      const car = await this.carRepository.findOne(id, {
-        relations: ['driver'],
-        select: ['id', 'model', 'mark', 'car_class', 'car_status', 'driver'],
-      });
-
-      if (!car) {
-        return [null, new CustomError(404, 'General', `Car with id:${id} not found.`, ['Car not found.'])];
-      }
-
-      return [car, null];
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+    } catch (error) {
+      errors.push(error.message);
+      data.error = this.makeCustomError(errors);
+      return data;
     }
   }
 
@@ -74,59 +100,88 @@ class CarService {
     id: number | string,
     mark?: string,
     model?: string,
-    car_class?: string,
-    car_status?: string,
-    driver_id?: number,
-  ): Promise<[Car | null, CustomError | null]> {
+    car_class?: Car_class,
+    car_status?: Car_status,
+    driverId?: number | string,
+  ): Promise<{ result: Car | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors = [];
+
     try {
-      const car = await this.carRepository.findOne({ where: { id } });
+      const car = await this.carRepository.findOne(id, {
+        relations: ['driver'],
+      });
 
       if (!car) {
-        return [null, new CustomError(404, 'General', `Car with id:${id} not found.`, ['Car not found.'])];
+        errors.push("Car not found.");
+        data.error = this.makeCustomError(errors);
+        return data;
       }
 
-      if (mark !== undefined) car.mark = mark;
-      if (model !== undefined) car.model = model;
-      if (car_class !== undefined) car.car_class = car_class as any;
-      if (car_status !== undefined) car.car_status = car_status as any;
+      if (mark !== undefined) {
+        car.mark = mark;
+      }
 
-      if (driver_id !== undefined) {
-        const client = await this.userRepository.findOne({ where: { id: driver_id } });
-        if (!client) {
-          return [
-            null,
-            new CustomError(404, 'General', `Driver with id:${driver_id} not found.`, ['Driver not found.']),
-          ];
+      if (model !== undefined) {
+        car.model = model;
+      }
+
+      if (car_class !== undefined) {
+        car.car_class = car_class;
+      }
+
+      if (car_status !== undefined) {
+        car.car_status = car_status;
+      }
+
+      if (driverId !== undefined) {
+        const driver = await this.userRepository.findOne(driverId);
+        if (!driver) {
+          errors.push(`Driver with id ${driverId} not found.`);
+        } else {
+          car.driver = driver;
         }
-        car.driver = client;
       }
 
-      try {
+      if (errors.length === 0) {
+        data.result = car;
         await this.carRepository.save(car);
-        return [car, null];
-      } catch (err) {
-        return [null, new CustomError(409, 'Raw', `Car '${car.mark} ${car.model}' can't be saved.`, null, err)];
+      } else {
+        data.error = this.makeCustomError(errors);
       }
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+
+      return data;
+    } catch (error) {
+      errors.push(error.message);
+      data.error = this.makeCustomError(errors);
+      return data;
     }
   }
 
-  async destroy(
-    id: number | string,
-  ): Promise<[Car | null, CustomError | null]> {
-    try {
-      const car = await this.carRepository.findOne({ where: { id } });
+  async destroy(id: number | string): Promise<{ result: Car | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors = [];
 
-      if (!car) {
-        return [null, new CustomError(404, 'General', 'Not Found', [`Car with id:${id} doesn't exist.`])];
+    try {
+      const { result, error } = await this.show(id);
+
+      if (error) {
+        data.error = error;
+        return data;
       }
 
-      await this.carRepository.delete(id);
+      if (errors.length === 0) {
+        data.result = result;
+        await this.carRepository.delete(id);
+      } else {
+        data.error = this.makeCustomError(errors);
+      }
 
-      return [car, null];
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+      return data;
+    } catch (error) {
+      errors.push(error.message);
+      data.error = this.makeCustomError(errors);
+      return data;
     }
   }
 }

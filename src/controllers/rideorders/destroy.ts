@@ -7,7 +7,7 @@ export const destroy = async (req: Request, res: Response, next: NextFunction) =
   const id = req.params.id;
   const rideOrderService = new RideOrderService();
 
-  const [result, error] = await rideOrderService.destroy(id);
+  const { result, error } = await rideOrderService.destroy(id);
 
   if (error) {
     return next(error);

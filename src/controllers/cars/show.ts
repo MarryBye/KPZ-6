@@ -1,3 +1,4 @@
+// filepath: [show.ts](http://_vscodecontentref_/2)
 import { Request, Response, NextFunction } from 'express';
 
 import { CarService } from 'service/CarService';
@@ -7,13 +8,13 @@ export const show = async (req: Request, res: Response, next: NextFunction) => {
   const id = req.params.id;
   const carService = new CarService();
 
-  const [car, error] = await carService.show(id);
+  const { result, error } = await carService.show(id);
 
   if (error) {
     return next(error);
   }
 
-  const carDTO = new CarResponseDTO(car!);
+  const carDTO = new CarResponseDTO(result);
 
-  res.customSuccess(200, 'Car found', carDTO);
+  res.customSuccess(200, 'Car found.', carDTO);
 };

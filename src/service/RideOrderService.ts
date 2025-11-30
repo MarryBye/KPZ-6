@@ -3,144 +3,207 @@ import { getRepository } from 'typeorm';
 import { RideOrder } from '../orm/entities/ride_orders/RideOrder';
 import { User } from '../orm/entities/users/User';
 import { Order_status, Payment_type } from '../orm/entities/ride_orders/types';
-import { CustomError } from '../utils/response/custom-error/CustomError';
+import { CustomError } from 'utils/response/custom-error/CustomError';
 
 class RideOrderService {
   private rideOrderRepository = getRepository(RideOrder);
   private userRepository = getRepository(User);
 
+  private makeCustomError(errors: string[]) {
+    return new CustomError(404, "Raw", errors.join("\n"));
+  }
+
+  async list(): Promise<{ result: RideOrder[] | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors = [];
+
+    const rideorders = await this.rideOrderRepository.find({
+      relations: ['driver', 'client'],
+    });
+
+    if (rideorders.length === 0) {
+      errors.push("No ride orders found.");
+    }
+
+    if (errors.length === 0) {
+      data.result = rideorders;
+    } else {
+      data.error = this.makeCustomError(errors);
+    }
+
+    return data;
+  }
+
+  async show(id: number | string): Promise<{ result: RideOrder | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors = [];
+
+    const rideorder = await this.rideOrderRepository.findOne(id, {
+      relations: ['driver', 'client'],
+    });
+
+    if (!rideorder) {
+      errors.push("Ride order not found.");
+    }
+
+    if (errors.length === 0) {
+      data.result = rideorder;
+    } else {
+      data.error = this.makeCustomError(errors);
+    }
+
+    return data;
+  }
+
   async create(
-    order_status: Order_status,
-    payment_type: Payment_type,
-    start_date: Date | string,
-    clientId: number | string,
-    driverId?: number | string,
-    end_date?: Date | string,
-  ): Promise<[RideOrder | null, CustomError | null]> {
+    order_status: Order_status, 
+    payment_type: Payment_type, 
+    clientId: number | string, 
+    driverId?: number | string, 
+    start_date?: Date, 
+    end_date?: Date
+  ): Promise<{ result: RideOrder | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors = [];
+
     try {
-      const order = new RideOrder();
-      order.order_status = (order_status as any) || 'In Progress';
-      order.payment_type = (payment_type as any) || 'Credit Card';
-      order.start_date = start_date ? new Date(start_date) : null;
-      order.end_date = end_date ? new Date(end_date) : null;
-
-      if (driverId !== undefined && driverId !== null) {
-        const driver = await this.userRepository.findOne(driverId);
-        if (!driver) {
-          return [null, new CustomError(404, 'General', `Driver with id:${driverId} not found.`, ['Driver not found.'])];
-        }
-        order.driver = driver;
-      }
-
+      const rideorder = this.rideOrderRepository.create();
+      rideorder.order_status = order_status;
+      rideorder.payment_type = payment_type;
+      
       const client = await this.userRepository.findOne(clientId);
       if (!client) {
-        return [null, new CustomError(404, 'General', `Client with id:${clientId} not found.`, ['Client not found.'])];
-      }
-      order.client = client;
-
-      await this.rideOrderRepository.save(order);
-      return [order, null];
-    } catch (err) {
-      return [null, new CustomError(500, 'Raw', 'Error', null, err)];
-    }
-  }
-
-  async list(): Promise<[RideOrder[] | null, CustomError | null]> {
-    try {
-      const orders = await this.rideOrderRepository.find({
-        relations: ['driver', 'client'],
-      });
-      return [orders, null];
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', `Can't retrieve ride orders.`, null, err)];
-    }
-  }
-
-  async show(id: number | string): Promise<[RideOrder | null, CustomError | null]> {
-    try {
-      const order = await this.rideOrderRepository.findOne(id, {
-        relations: ['driver', 'client'],
-      });
-
-      if (!order) {
-        return [null, new CustomError(404, 'General', `Ride order with id:${id} not found.`, ['Ride order not found.'])];
+        errors.push(`Client with id ${clientId} not found.`);
+      } else {
+        rideorder.client = client;
       }
 
-      return [order, null];
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+      if (driverId !== undefined) {
+        const driver = await this.userRepository.findOne(driverId);
+        if (!driver) {
+          errors.push(`Driver with id ${driverId} not found.`);
+        } else {
+          rideorder.driver = driver;
+        }
+      }
+
+      if (start_date !== undefined) {
+        rideorder.start_date = new Date(start_date);
+      }
+      
+      if (end_date !== undefined) {
+        rideorder.end_date = new Date(end_date);
+      }
+
+      if (errors.length === 0) {
+        data.result = rideorder;
+        await this.rideOrderRepository.save(rideorder);
+      } else {
+        data.error = this.makeCustomError(errors);
+      }
+
+      return data;
+    } catch (error) {
+      errors.push(error.message);
+      data.error = this.makeCustomError(errors);
+      return data;
     }
   }
 
   async edit(
     id: number | string,
-    order_status?: Order_status,
-    payment_type?: Payment_type,
-    start_date?: Date | string,
-    end_date?: Date | string,
-    driverId?: number | string,
-    clientId?: number | string,
-  ): Promise<[RideOrder | null, CustomError | null]> {
-    try {
-      const order = await this.rideOrderRepository.findOne({ where: { id } });
+    order_status?: Order_status, 
+    payment_type?: Payment_type, 
+    clientId?: number | string, 
+    driverId?: number | string, 
+    start_date?: Date, 
+    end_date?: Date
+  ): Promise<{ result: RideOrder | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors = [];
 
-      if (!order) {
-        return [null, new CustomError(404, 'General', `Ride order with id:${id} not found.`, ['Ride order not found.'])];
+    try {
+      const rideorder = await this.rideOrderRepository.findOne(id);
+      
+      if (!rideorder) {
+        errors.push("Ride order not found.");
+        data.error = this.makeCustomError(errors);
+        return data;
       }
 
-      order.order_status = order_status ?? order.order_status;
-      order.payment_type = payment_type ?? order.payment_type;
-      order.start_date = start_date !== undefined ? (start_date ? new Date(start_date) : null) : order.start_date;
-      order.end_date = end_date !== undefined ? (end_date ? new Date(end_date) : null) : order.end_date;
+      if (order_status !== undefined) {
+        rideorder.order_status = order_status;
+      }
 
-      if (driverId !== undefined) {
-        if (driverId === null) {
-          order.driver = null;
-        } else {
-          const driver = await this.userRepository.findOne(driverId);
-          if (!driver) {
-            return [null, new CustomError(404, 'General', `Driver with id:${driverId} not found.`, ['Driver not found.'])];
-          }
-          order.driver = driver;
-        }
+      if (payment_type !== undefined) {
+        rideorder.payment_type = payment_type;
       }
 
       if (clientId !== undefined) {
-        if (clientId === null) {
-          order.client = null;
+        const client = await this.userRepository.findOne(clientId);
+        if (!client) {
+          errors.push(`Client with id ${clientId} not found.`);
         } else {
-          const client = await this.userRepository.findOne(clientId);
-          if (!client) {
-            return [null, new CustomError(404, 'General', `Client with id:${clientId} not found.`, ['Client not found.'])];
-          }
-          order.client = client;
+          rideorder.client = client;
         }
       }
 
-      try {
-        await this.rideOrderRepository.save(order);
-        return [order, null];
-      } catch (err) {
-        return [null, new CustomError(409, 'Raw', `Ride order '${order.id}' can't be saved.`, null, err)];
+      if (driverId !== undefined) {
+        const driver = await this.userRepository.findOne(driverId);
+        if (!driver) {
+          errors.push(`Driver with id ${driverId} not found.`);
+        } else {
+          rideorder.driver = driver;
+        }
       }
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+
+      if (start_date !== undefined && start_date !== null) {
+        rideorder.start_date = new Date(start_date);
+      }
+
+      if (end_date !== undefined && end_date !== null) {
+        rideorder.end_date = new Date(end_date);
+      }
+
+      if (errors.length === 0) {
+        data.result = rideorder;
+        await this.rideOrderRepository.save(rideorder);
+      } else {
+        data.error = this.makeCustomError(errors);
+      }
+
+      return data;
+    } catch (error) {
+      errors.push(error.message);
+      data.error = this.makeCustomError(errors);
+      return data;
     }
   }
 
-  async destroy(id: number | string): Promise<[RideOrder | null, CustomError | null]> {
-    try {
-      const order = await this.rideOrderRepository.findOne({ where: { id } });
+  async destroy(id: number | string): Promise<{ result: RideOrder | null; error: CustomError | null }> {
+    let data = { result: null, error: null };
+    let errors = [];
 
-      if (!order) {
-        return [null, new CustomError(404, 'General', 'Not Found', [`Ride order with id:${id} doesn't exist.`])];
+    try {
+      const { result, error } = await this.show(id);
+      
+      if (error) {
+        data.error = error;
+        return data;
       }
 
-      await this.rideOrderRepository.delete(id);
+      if (errors.length === 0) {
+        data.result = result;
+        await this.rideOrderRepository.delete(id);
+      } else {
+        data.error = this.makeCustomError(errors);
+      }
 
-      return [order, null];
-    } catch (err) {
-      return [null, new CustomError(400, 'Raw', 'Error', null, err)];
+      return data;
+    } catch (error) {
+      errors.push(error.message);
+      data.error = this.makeCustomError(errors);
+      return data;
     }
   }
 }

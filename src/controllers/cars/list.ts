@@ -1,3 +1,4 @@
+// filepath: /Users/marrybye/Documents/Универ/КПЗ/KPZ-4/src/controllers/cars/list.ts
 import { Request, Response, NextFunction } from 'express';
 
 import { CarService } from 'service/CarService';
@@ -5,14 +6,13 @@ import { CarResponseDTO } from '../../dto/car_response_dto';
 
 export const list = async (req: Request, res: Response, next: NextFunction) => {
   const carService = new CarService();
-
-  const [cars, error] = await carService.list();
+  const { result, error } = await carService.list();
 
   if (error) {
     return next(error);
   }
 
-  const carsDTOs = cars.map((car) => new CarResponseDTO(car));
+  const carDTOs = result.map(car => new CarResponseDTO(car));
 
-  res.customSuccess(200, 'List of cars.', carsDTOs);
+  res.customSuccess(200, 'List of cars.', carDTOs);
 };
