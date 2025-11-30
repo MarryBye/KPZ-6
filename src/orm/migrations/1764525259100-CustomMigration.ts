@@ -1,7 +1,7 @@
 import {MigrationInterface, QueryRunner} from "typeorm";
 
-export class CustomMigrate1764517826407 implements MigrationInterface {
-    name = 'CustomMigrate1764517826407'
+export class CustomMigration1764525259100 implements MigrationInterface {
+    name = 'CustomMigration1764525259100'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`
@@ -11,6 +11,8 @@ export class CustomMigrate1764517826407 implements MigrationInterface {
                 "mark" character varying(32) NOT NULL,
                 "car_status" character varying(16) NOT NULL DEFAULT 'AVAILABLE',
                 "car_class" character varying(16) NOT NULL DEFAULT 'STANDARD',
+                "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "driver_id" integer,
                 CONSTRAINT "REL_1403195e3b80cf083352758adb" UNIQUE ("driver_id"),
                 CONSTRAINT "PK_fc218aa84e79b477d55322271b6" PRIMARY KEY ("id")

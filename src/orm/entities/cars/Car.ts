@@ -42,4 +42,10 @@ export class Car {
   @OneToOne(() => User, (user) => user.car, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn()
   driver: User;
+
+  @CreateDateColumn()
+  created_at: Date;
+
+  @UpdateDateColumn()
+  updated_at: Date;
 }
