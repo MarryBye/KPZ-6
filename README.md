@@ -88,13 +88,12 @@
   npm run migration:run:dev
   npm run seed:run
 
-- По завершенню перевірок API використайте Postman collection: [postman/RESTful API Boilerplate.postman_collection.json](postman/RESTful API Boilerplate.postman_collection.json)
+- По завершенню перевірок API використайте Postman collection
 
 ## Нова архітектура додатку — шари та їхня роль
 
 - Middleware (валідація)
   - Призначення: зупиняє некоректні запити до контролерів, нормалізує вхідні дані та повертає зрозумілі помилки (400).
-  - Приклади: express-validator, перевірка JWT.
 
 - Controller (оркестрація)
   - Призначення: приймає запит після middleware, викликає сервіс, формує та повертає відповідь (HTTP-коди, DTO).
@@ -103,4 +102,4 @@
   - Призначення: інкапсулює бізнес-правила, обробку даних та роботу з репозиторіями; не займається HTTP-логікою.
 
 - Repository (доступ до даних)
-  - Призначення: робота з ORM / SQL (TypeORM репозиторії), тільки CRUD та запити з відношеннями.
+  - Призначення: робота з ORM, тільки CRUD та запити з відношеннями.
