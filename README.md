@@ -75,7 +75,7 @@
 
 - Postman collection: [postman/RESTful API Boilerplate.postman_collection.json](postman/RESTful API Boilerplate.postman_collection.json)
 
-(Замість плейсхолдерів додайте реальні скріншоти у вказані шляхи.)
+![Скриншоти](./images/)
 
 ## Запуск проекту (коротко)
 
