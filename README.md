@@ -10,18 +10,18 @@
 ## Короткий опис сутностей та їхніх зв'язків
 
 - Сутності:
-  - [`orm.entities.users.User`](src/orm/entities/users/User.ts) — користувачі (адміністратори та стандартні користувачі). Посилання на файл: [src/orm/entities/users/User.ts](src/orm/entities/users/User.ts)
-  - [`orm.entities.cars.Car`](src/orm/entities/cars/Car.ts) — автомобілі. Посилання: [src/orm/entities/cars/Car.ts](src/orm/entities/cars/Car.ts)
-  - [`orm.entities.ride_orders.RideOrder`](src/orm/entities/ride_orders/RideOrder.ts) — замовлення поїздок. Посилання: [src/orm/entities/ride_orders/RideOrder.ts](src/orm/entities/ride_orders/RideOrder.ts)
+  - [`orm.entities.users.User`](src/orm/entities/users/User.ts) — користувачі (адміністратори та стандартні користувачі).
+  - [`orm.entities.cars.Car`](src/orm/entities/cars/Car.ts) — автомобілі. 
+  - [`orm.entities.ride_orders.RideOrder`](src/orm/entities/ride_orders/RideOrder.ts) — замовлення поїздок.
 
 - Відносини:
-  - Один User може мати один Car (OneToOne): властивість в User — `car`. Деталі: [`orm.entities.users.User`](src/orm/entities/users/User.ts), [`orm.entities.cars.Car`](src/orm/entities/cars/Car.ts).
-  - User може бути водієм або клієнтом у RideOrder (OneToMany / ManyToOne): властивості `orders_as_driver`, `orders_as_client` у [`orm.entities.users.User`](src/orm/entities/users/User.ts), зв'язки в [`orm.entities.ride_orders.RideOrder`](src/orm/entities/ride_orders/RideOrder.ts).
+  - Один User може мати один Car (OneToOne): властивість в User — `car`.
+  - User може бути водієм або клієнтом у RideOrder (OneToMany / ManyToOne): властивості `orders_as_driver`, `orders_as_client`.
 
 - DTO:
-  - [`dto.UserResponseDTO`](src/dto/user_response_dto.ts) — контрольоване представлення User: [src/dto/user_response_dto.ts](src/dto/user_response_dto.ts)
-  - [`dto.CarResponseDTO`](src/dto/car_response_dto.ts) — контрольоване представлення Car: [src/dto/car_response_dto.ts](src/dto/car_response_dto.ts)
-  - [`dto.RideOrderResponseDTO`](src/dto/rideorder_response_dto.ts) — контрольоване представлення RideOrder (включає пов'язані об'єкти driver / client): [src/dto/rideorder_response_dto.ts](src/dto/rideorder_response_dto.ts)
+  - [`dto.UserResponseDTO`](src/dto/user_response_dto.ts) — контрольоване представлення User
+  - [`dto.CarResponseDTO`](src/dto/car_response_dto.ts) — контрольоване представлення Car
+  - [`dto.RideOrderResponseDTO`](src/dto/rideorder_response_dto.ts) — контрольоване представлення RideOrder
 
 - Помічні компоненти:
   - Помилка: [`utils.response.custom-error.CustomError`](src/utils/response/custom-error/CustomError.ts)
@@ -57,8 +57,6 @@
   - PATCH /v1/rideorders/:id — редагувати замовлення. Контролер: [`controllers.rideorders.edit`](src/controllers/rideorders/edit.ts)
   - DELETE /v1/rideorders/:id — видалити замовлення. Контролер: [`controllers.rideorders.destroy`](src/controllers/rideorders/destroy.ts)
 
-Документація маршрутизації: [src/routes/v1/index.ts](src/routes/v1/index.ts)
-
 ## Валідація (middleware)
 
 - Валідація аутентифікації: [src/middleware/validation/auth](src/middleware/validation/auth) — `validatorLogin`, `validatorRegister`, `validatorChangePassword`
@@ -93,18 +91,6 @@
   npm run seed:run
 
 - По завершенню перевірок API використайте Postman collection: [postman/RESTful API Boilerplate.postman_collection.json](postman/RESTful API Boilerplate.postman_collection.json)
-
-## Ключові файли проекту (швидкі посилання)
-- [src/index.ts](src/index.ts)
-- [src/routes/v1/auth.ts](src/routes/v1/auth.ts)
-- [src/routes/v1/users.ts](src/routes/v1/users.ts)
-- [src/routes/v1/cars.ts](src/routes/v1/cars.ts)
-- [src/routes/v1/rideorders.ts](src/routes/v1/rideorders.ts)
-- [src/orm/entities/users/User.ts](src/orm/entities/users/User.ts)
-- [src/orm/entities/cars/Car.ts](src/orm/entities/cars/Car.ts)
-- [src/orm/entities/ride_orders/RideOrder.ts](src/orm/entities/ride_orders/RideOrder.ts)
-- [src/service/RideOrderService.ts](src/service/RideOrderService.ts)
-- [src/utils/response/custom-error/CustomError.ts](src/utils/response/custom-error/CustomError.ts)
 
 ## Нова архітектура додатку — шари та їхня роль
 
